@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <mysql/mysql.h>
+
+// Define database connection parameters
+#define DB_HOST "localhost"
+#define DB_USER "root"
+#define DB_PASSWORD "student"
+#define DB_NAME "Patients"
+
+MYSQL *conn; // MySQL connection object
+
+// Function to execute SQL queries
+void execute_query(const char *query) {
+    if (mysql_query(conn, query)) { // Execute the query
+        // If query execution fails, print error message and exit
+        fprintf(stderr, "Query execution error: %s\n", mysql_error(conn));
+        mysql_close(conn); // Close the connection
+        exit(EXIT_FAILURE); // Exit the program
+    }
+}
+
+// Function to test the Appointments view
+void testAppointmentsView() {
+    printf("Testing Appointments View...\n");
+    if (mysql_query(conn, "SELECT * FROM Appointments")) { // Execute SQL query
+        // If query execution fails, print error message and exit
+        fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+        exit(EXIT_FAILURE); // Exit the program
+    }
+    MYSQL_RES *result = mysql_store_result(conn); // Store the result set
+    if (result) {
+        MYSQL_ROW row;
+        printf("Appointment ID\t| Patient ID\t| Doctor ID\t| Appointment Date\n");
+        while ((row = mysql_fetch_row(result))) { // Fetch each row from the result set
+            printf("%s\t| %s\t| %s\t| %s\n", row[0], row[1], row[2], row[3]); // Print row data
+        }
+        mysql_free_result(result); // Free the result set
+    } else {
+        // If failed to store result set, print error message
+        fprintf(stderr, "Failed to store result: Error: %s\n", mysql_error(conn));
+    }
+}
+
+// Function to test the Patients view
+void testPatientsView() {
+    printf("Testing Patients View...\n");
+    if (mysql_query(conn, "SELECT * FROM Patients")) { // Execute SQL query
+        // If query execution fails, print error message and exit
+        fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+        exit(EXIT_FAILURE); // Exit the program
+    }
+    MYSQL_RES *result = mysql_store_result(conn); // Store the result set
+    if (result) {
+        MYSQL_ROW row;
+        printf("Patient ID\t| First name\t| Last name\t| DOB\t| Gender\t| Phone\t| E-Mail\t| Address\n");
+        while ((row = mysql_fetch_row(result))) { // Fetch each row from the result set
+            printf("%s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\n", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]); // Print row data
+        }
+        mysql_free_result(result); // Free the result set
+    } else {
+        // If failed to store result set, print error message
+        fprintf(stderr, "Failed to store result: Error: %s\n", mysql_error(conn));
+    }
+}
+
+// Function to test the Doctors view
+void testDoctorsView() {
+    printf("Testing Doctors View...\n");
+    if (mysql_query(conn, "SELECT * FROM Doctors")) { // Execute SQL query
+        // If query execution fails, print error message and exit
+        fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+        exit(EXIT_FAILURE); // Exit the program
+    }
+    MYSQL_RES *result = mysql_store_result(conn); // Store the result set
+    if (result) {
+        MYSQL_ROW row;
+        printf("Doctor ID\t| Doctor Name\n");
+        while ((row = mysql_fetch_row(result))) { // Fetch each row from the result set
+            printf("%s\t| %s\n", row[0], row[1]); // Print row data
+        }
+        mysql_free_result(result); // Free the result set
+    } else {
+        // If failed to store result set, print error message
+        fprintf(stderr, "Failed to store result: Error: %s\n", mysql_error(conn));
+    }
+}
+
+int main() {
+    conn = mysql_init(NULL); // Initialize MySQL connection object
+
+    if (conn == NULL) { // Check if initialization failed
+        // If initialization failed, print error message and exit
+        fprintf(stderr, "mysql_init () failed\n");
+        return EXIT_FAILURE; // Exit the program
+    }
+    if (mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, NULL, 0, NULL, 0) == NULL) {
+        // Connect to MySQL server
+        // If connection failed, print error message and exit
+        fprintf(stderr, "mysql_real_connect () failed\n");
+        mysql_close(conn); // Close the connection
+        return EXIT_FAILURE; // Exit the program
+    }
+    // USE Patient DB
+    execute_query("USE Patients"); // Use the Patients database
+
+    int choice;
+    // Main loop
+    while (1) {
+        // Prompt user for choice
+        printf("\n");
+        printf("What would you like to do? Enter a number\n");
+        printf("Enter 1 to enter appointments view\n");
+        printf("Enter 2 to enter patient view\n");
+        printf("Enter 3 to enter doctor view\n");
+        printf("Enter 4 to quit\n");
+    
+        scanf("%d", &choice); // Read user choice
+
+        switch (choice) {
+        case 1:
+            testAppointmentsView(); // Test appointments view
+            break;
+        case 2:
+            testPatientsView(); // Test patients view
+            break;
+        case 3:
+            testDoctorsView(); // Test doctors view
+            break;
+        case 4:
+            printf("Exiting...\n"); // Quit
+            break;
+        default:
+            printf("Invalid choice. Please try again.\n"); // Invalid choice
+        }
+
+        if (choice == 4) { // Check if user chose to quit
+            break; // Exit the loop
+        }
+    }
+
+    mysql_close(conn); // Close MySQL connection
+    return 0; // Exit the program
+}

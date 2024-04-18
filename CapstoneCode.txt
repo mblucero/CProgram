@@ -1,0 +1,380 @@
+#include <mysql/mysql.h>  // MySQL C API header file
+#include <stdio.h>        // Standard input-output header file
+#include <stdlib.h>       // Standard library header file
+
+#define DB_HOST "localhost"   // Database host
+#define DB_USER "root"        // Database username
+#define DB_PASSWORD "student" // Database password
+#define DB_NAME "Patients"    // Database name
+
+MYSQL *conn;      // MySQL connection object
+MYSQL_RES *res;   // MySQL result object
+MYSQL_ROW row;    // MySQL row object
+
+// Function to execute a MySQL query
+void execute_query(const char *query)
+{
+    // Execute the query and check for errors
+    if (mysql_query(conn, query))
+    {
+        // If there's an error, print the error message and exit the program
+        fprintf(stderr, "Query execution error: %s\n", mysql_error(conn));
+        mysql_close(conn);
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main()
+{
+    // Initialize MySQL connection
+    conn = mysql_init(NULL);
+
+    // Check if MySQL connection initialization was successful
+    if (conn == NULL)
+    {
+        // If initialization failed, print an error message and return EXIT_FAILURE
+        fprintf(stderr, "mysql_init () failed\n");
+        return EXIT_FAILURE;
+    }
+
+    // Connect to MySQL server
+    if (mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, NULL, 0, NULL, 0) == NULL)
+    {
+        // If connection fails, print an error message, close the connection, and return EXIT_FAILURE
+        fprintf(stderr, "mysql_real_connect () failed\n");
+        mysql_close(conn);
+        return EXIT_FAILURE;
+    }
+
+    // Select the database to work with
+    execute_query("USE Patients");
+
+    int choice;
+
+    // Main loop to present options to the user
+    while (1)
+    {
+        // Prompt the user for their choice
+        printf("What would you like to do? Enter a number\n");
+        printf("Enter 1 to enter appointments view\n");
+        printf("Enter 2 to enter patient view\n");
+        printf("Enter 3 to enter doctor view\n");
+        printf("Enter 4 to quit\n");
+        scanf("%d", &choice);
+
+        // Switch statement based on the user's choice
+        switch (choice)
+        {
+            case 1: 
+                // View appointments
+                printf("Viewing Appointments\n");
+                // Execute query to select all appointments
+                if(mysql_query(conn, "SELECT * FROM Appointments")) {
+                    fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+                    exit(1);
+                }
+                
+                // Store the result of the query
+                res = mysql_store_result(conn);
+            
+                // Print the result in a tabular format
+                printf("Appointment ID\t| Patient ID\t| Doctor ID\t| Appointment Date\n");
+                while ((row = mysql_fetch_row(res)))
+                {
+                    printf("%s\t| %s\t| %s\t| %s\n", row[0], row[1], row[2], row[3]);
+                }
+                
+                // Free the result object
+                mysql_free_result(res);
+
+                // Prompt the user for further actions
+                printf("What would you like to do? Enter a number\n");
+                printf("Enter 1 to alter appointments\n");
+                printf("Enter 2 to cancel appointments\n");
+                printf("Enter 3 to set an appointment\n");
+                printf("Enter 4 to quit\n");
+                scanf("%d", &choice);
+        
+                switch(choice){
+                    case 1:
+                        // Alter appointments
+                        printf("Enter Appointment ID of appointment you wish to update\n");
+                        int aid;
+                        scanf("%d", &aid);
+                        
+                        printf("Which column would you like to update?\n");
+                        char update[20];
+                        scanf(" %[^\n]", update);
+                        
+                        printf("What is the new information?\n");
+                        char newvalue[50];
+                        scanf(" %[^\n]", newvalue);
+                        
+                        // Construct and execute the update query
+                        char query1[1000];
+                        snprintf(query1, sizeof(query1), "UPDATE Appointments SET %s = '%s' WHERE appointment_id = %d", update, newvalue, aid);
+                        
+                        if(mysql_query(conn, query1)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Appointment edited successfully!\n");
+                        break;
+
+                    case 2:
+                        // Cancel appointments
+                        printf("Enter Appointment ID of appointment you wish to cancel\n");
+                        int aid_cancel;
+                        scanf("%d", &aid_cancel);
+                        
+                        // Construct and execute the delete query
+                        char query_cancel[1000];
+                        snprintf(query_cancel, sizeof(query_cancel), "DELETE FROM Appointments WHERE appointment_id = %d", aid_cancel);
+                        
+                        if(mysql_query(conn, query_cancel)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Appointment cancelled successfully!\n");
+                        break;
+
+                    case 3:
+                        // Set an appointment
+                        printf("Enter appointment details\nPatient ID:\n");
+                        int pid;
+                        scanf("%d", &pid);
+                        printf("Enter Doctor ID:\n");
+                        int did;
+                        scanf("%d", &did);
+                        printf("Enter Appointment Date (YYYY-MM-DD):\n");
+                        char app_date[12];
+                        scanf("%s", app_date);
+
+                        // Construct and execute the insert query
+                        char query_set[1000];
+                        snprintf(query_set, sizeof(query_set), "INSERT INTO Appointments(patient_id, doctor_id, appointment_date) VALUES ('%d,' '%d', '%s')", pid, did, app_date);
+
+                        if (mysql_query(conn, query_set)) {
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+
+                        printf("Appointment inserted successfully!\n");
+                        break;
+                }
+                break;
+            
+            case 2:
+                // View patients
+                printf("Viewing patients\n");
+                // Execute query to select all patients
+                if (mysql_query(conn, "SELECT * FROM Patients")){
+                    fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+                    exit(1);
+                }
+                
+                // Store the result of the query
+                res = mysql_store_result(conn);
+                
+                // Print the result in a tabular format
+                printf("Patient ID\t| First name\t| Last name\t| DOB\t| Gender\t| Phone\t| E-Mail\t| Address\n");
+                while ((row = mysql_fetch_row(res))) {
+                    printf("%s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\n", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
+                }
+                
+                // Free the result object
+                mysql_free_result(res);
+
+                // Prompt the user for further actions
+                printf("What would you like to do? Enter a number\n");
+                printf("Enter 1 to alter patients\n");
+                printf("Enter 2 to close patient account\n");
+                printf("Enter 3 to add new patient\n");
+                printf("Enter 4 to quit: \n");
+                scanf("%d", &choice);
+        
+                switch(choice){
+                    case 1:
+                        // Alter patients
+                        printf("Enter Patient ID of the patient you wish to update\n");
+                        int pid_alter;
+                        scanf("%d", &pid_alter);
+                        
+                        printf("Which column would you like to update?\n");
+                        char update_patient[20];
+                        scanf(" %[^\n]", update_patient);
+                        
+                        printf("What is the new information?\n");
+                        char newvalue_patient[50];
+                        scanf(" %[^\n]", newvalue_patient);
+                        
+                        // Construct and execute the update query
+                        char query_alter[1000];
+                        snprintf(query_alter, sizeof(query_alter), "UPDATE Patients SET %s = '%s' WHERE patient_id = %d", update_patient, newvalue_patient, pid_alter);
+                        
+                        if(mysql_query(conn, query_alter)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Patient edited successfully!\n");
+                        break;
+
+                    case 2:
+                        // Close patient account
+                        printf("Enter Patient ID of patient you wish to remove\n");
+                        int pid_delete;
+                        scanf("%d", &pid_delete);
+                        
+                        // Construct and execute the delete query
+                        char query_delete[1000];
+                        snprintf(query_delete, sizeof(query_delete), "DELETE FROM Patients WHERE patient_id = %d", pid_delete);
+                        
+                        if(mysql_query(conn, query_delete)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Patient removed successfully!\n");
+                        break;
+
+                    case 3:
+                        // Add new patient
+                        printf("Enter patient details\nFirst name: \n");
+                        char fn[20];
+                        scanf("%s", fn);
+                        printf("Enter Last Name:\n");
+                        char ln[20];
+                        scanf("%s", ln);
+                        printf("\nEnter Date-of-Birth (YYYY-MM-DD):\n");
+                        char dob[12];
+                        scanf("%s", dob);
+                        printf("\nEnter Gender:\n");
+                        char gen[10];
+                        scanf("%s", gen);
+                        printf("\nEnter Phone Number:\n");
+                        char pnum[15];
+                        scanf("%s",pnum);
+                        printf("\nEnter Email:\n");
+                        char email[50];
+                        scanf("%s", email);
+                        printf("\nEnter Address:\n");
+                        char address[50];
+                        scanf(" %[^\n]", address);
+
+                        // Construct and execute the insert query
+                        char query_add[1000];
+                        snprintf(query_add, sizeof(query_add), "INSERT INTO Patients(first_name, last_name, Date_of_Birth, Gender, phone, email, address) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')", fn, ln, dob, gen, pnum, email, address);
+
+                        if (mysql_query(conn, query_add)) {
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+
+                        printf("Patient inserted successfully!\n");
+                        break;
+                }
+                break;
+
+            case 3:
+                // View doctors
+                printf("Viewing Doctors\n");
+                // Execute query to select all doctors
+                if (mysql_query(conn, "SELECT * FROM Doctors")){
+                    fprintf(stderr, "Failed to execute query: Error: %s\n", mysql_error(conn));
+                    exit(1);
+                }
+                
+                // Store the result of the query
+                res = mysql_store_result(conn);
+                
+                // Print the result in a tabular format
+                printf("\nDoctor ID\t| Doctor Name\n");
+                while ((row = mysql_fetch_row(res))){
+                    printf("%s\t| %s\n", row[0], row[1]);
+                }
+                
+                // Free the result object
+                mysql_free_result(res);
+
+                // Prompt the user for further actions
+                printf("\nWhat would you like to do? Enter a number\n");
+                printf("Enter 1 to alter doctors\n");
+                printf("Enter 2 to remove doctor\n");
+                printf("Enter 3 to add new doctor\n");
+                printf("Enter 4 to quit\n");
+                scanf("%d", &choice);
+        
+                switch(choice){
+                    case 1:
+                        // Alter doctors
+                        printf("Enter Doctor ID of the doctor you wish to update\n");
+                        int did_alter;
+                        scanf("%d", &did_alter);
+                        
+                        printf("What is the new information?\n");
+                        char newvalue_doctor[50];
+                        scanf(" %[^\n]", newvalue_doctor);
+                        
+                        // Construct and execute the update query
+                        char query_alter_doctor[1000];
+                        snprintf(query_alter_doctor, sizeof(query_alter_doctor), "UPDATE Doctors SET doctor_name = '%s' WHERE doctor_id = %d", newvalue_doctor, did_alter);
+                        
+                        if(mysql_query(conn, query_alter_doctor)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Doctor edited successfully!\n");
+                        break;            
+            
+                    case 2:
+                        // Remove doctor
+                        printf("Enter Doctor ID of the doctor you wish to remove\n");
+                        int did_delete;
+                        scanf("%d", &did_delete);
+                        
+                        // Construct and execute the delete query
+                        char query_delete_doctor[1000];
+                        snprintf(query_delete_doctor, sizeof(query_delete_doctor), "DELETE FROM Doctors WHERE doctor_id = %d", did_delete);
+                        
+                        if(mysql_query(conn, query_delete_doctor)){
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+                        
+                        printf("Doctor removed successfully!\n");
+                        break;   
+                        
+                    case 3:
+                        // Add new doctor
+                        printf("Enter doctor name (Dr First Last)\n");
+                        char dn[20];
+                        scanf(" %[^\n]", dn);
+
+                        // Construct and execute the insert query
+                        char query_add_doctor[1000];
+                        snprintf(query_add_doctor, sizeof(query_add_doctor), "INSERT INTO Doctors(doctor_name) VALUES ('%s')", dn);
+
+                        if (mysql_query(conn, query_add_doctor)) {
+                            fprintf(stderr, "%s\n", mysql_error(conn));
+                            return 1;
+                        }
+
+                        printf("Doctor inserted successfully!\n");
+                        break;
+                }
+                break;
+
+            case 4:
+                // Exit the program
+                printf("Exiting program...\n");
+                mysql_close(conn);
+                return 0; 
+        }
+    }
+
+    return 0;
+}

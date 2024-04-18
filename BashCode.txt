@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Database connection details
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASSWORD="student"
+DB_NAME="Patients"
+
+# Function to execute a MySQL query
+function execute_query() {
+    local query="$1"
+    # Execute the query using MySQL command-line client
+    # -h: MySQL host
+    # -u: MySQL user
+    # -p: Password prompt (no space between -p and password)
+    # -e: Execute the specified SQL statement
+    # "$DB_NAME": Specifies the database to use
+    if ! mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "$query" "$DB_NAME"; then
+        echo "Query execution error"
+        exit 1
+    fi
+}
+
+# Function to test appointments view
+function AppointmentView() {
+    echo "Testing Appointments View..."
+    # Execute a query to select all records from the Appointments table
+    execute_query "SELECT * FROM AppointmentView"
+}
+
+# Function to test patients view
+function PatientView() {
+    echo "Testing Patients View..."
+    # Execute a query to select all records from the Patients table
+    execute_query "SELECT * FROM PatientView"
+}
+
+# Function to test doctors view
+function DoctorView() {
+    echo "Testing Doctors View..."
+    # Execute a query to select all records from the Doctors table
+    execute_query "SELECT * FROM DoctorView"
+}
+
+while true; do
+    # Display Main Menu
+    echo "What would you like to do? Enter a number"
+    echo "Enter 1 to enter appointments view"
+    echo "Enter 2 to enter patient view"
+    echo "Enter 3 to enter doctor view"
+    echo "Enter 4 to quit"
+
+    # Read user input
+    read -r choice
+
+    # Process user choice
+    case "$choice" in
+        1) AppointmentView;;    # Test appointments view
+        2) PatientView;;        # Test patients view
+        3) DoctorView;;         # Test doctors view
+        4) echo "Exiting..."; break;;  # Exit
+        *) echo "Invalid choice. Please try again.";;
+    esac
+done

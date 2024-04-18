@@ -1,0 +1,44 @@
+CC = gcc
+
+CFLAGS = -Wall -Wextra -std=c99
+
+LDFLAGS = -lmysqlclient
+
+DB_HOST = localhost
+
+DB_USER = root
+
+DB_PASSWORD = student
+
+DB_NAME = Patients
+
+
+.PHONY: all clean test bash_test
+
+all: debugCapstone Test Views
+
+capstone: capstone.o
+
+    $(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+capstone.o: debugCapstone.c
+
+    $(CC) $(CFLAGS) -c -o $@ $<
+
+test: Test
+
+test_program: Test.o
+
+    $(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+test.o: Test.c
+
+    $(CC) $(CFLAGS) -c -o $@ $<
+
+bash_test:
+
+    Views.sh
+
+clean:
+
+    rm -f capstone capstone.o test test.o
