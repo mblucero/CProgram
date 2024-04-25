@@ -1,0 +1,1 @@
+This project is a C Program for keeping track of appointments, patients, and doctors. Everything can be edited for accuracy and appointments can be cancelled, changed, or deleted. This program also has a bash script to automate pulling upcoming appointments in a clean display, and debugging.
